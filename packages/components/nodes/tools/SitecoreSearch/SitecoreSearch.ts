@@ -22,7 +22,7 @@ class SitecoreSearch_Tools implements INode {
         this.type = 'SitecoreSearch'
         this.icon = 'sitecoresearch.png'
         this.category = 'Tools'
-        this.description = 'Execute HTTP POST requests'
+        this.description = 'Search documents in Sitecore Search/Discover'
         this.baseClasses = [this.type, ...getBaseClasses(SitecoreSearchTool)]
 		this.credential = {
             label: 'Connect Credential',
@@ -35,17 +35,25 @@ class SitecoreSearch_Tools implements INode {
                 label: 'URL',
                 name: 'url',
                 type: 'string',
+                description: 'Base URL for Sitecore Search API',
+                additionalParams: false,
+                optional: false
+            },
+            {
+                label: 'widget.items',
+                name: 'body',
+                type: 'json',
                 description:
-                    'Agent will make call to this exact URL. If not specified, agent will try to figure out itself from AIPlugin if provided',
+                    'JSON body for `widget.items` parameter',
                 additionalParams: true,
                 optional: true
             },
             {
-                label: 'Body',
-                name: 'body',
+                label: 'context',
+                name: 'body2',
                 type: 'json',
                 description:
-                    'JSON body for the POST request. If not specified, agent will try to figure out itself from AIPlugin if provided',
+                    'JSON body for `context` parameter',
                 additionalParams: true,
                 optional: true
             },
@@ -58,22 +66,24 @@ class SitecoreSearch_Tools implements INode {
                 description: 'Acts like a prompt to tell agent when it should use this tool',
                 additionalParams: true,
                 optional: true
-            },
-            {
-                label: 'Headers',
-                name: 'headers',
-                type: 'json',
-                additionalParams: true,
-                optional: true
             }
+            // ,
+            // {
+            //     label: 'Headers',
+            //     name: 'headers',
+            //     type: 'json',
+            //     additionalParams: true,
+            //     optional: true
+            // }
         ]
     }
 
     async init(nodeData: INodeData, _: string, options: ICommonObject): Promise<any> {
-        const headers = nodeData.inputs?.headers as string
+        //const headers = nodeData.inputs?.headers as string
         const url = nodeData.inputs?.url as string
         const description = nodeData.inputs?.description as string
         const body = nodeData.inputs?.body as string
+        const body2 = nodeData.inputs?.body2 as string
 
 		const credentialData = await getCredentialData(nodeData.credential ?? '', options)
         const serpApiKey = getCredentialParam('sitecoreSearchApiKey', credentialData, nodeData)
@@ -81,15 +91,18 @@ class SitecoreSearch_Tools implements INode {
         const obj: RequestParameters = {}
         if (url) obj.url = url
         if (description) obj.description = description
-        if (headers) {
-            const parsedHeaders = typeof headers === 'object' ? headers : JSON.parse(headers)
-            obj.headers = parsedHeaders
-        }
+        // if (headers) {
+        //     const parsedHeaders = typeof headers === 'object' ? headers : JSON.parse(headers)
+        //     obj.headers = parsedHeaders
+        // }
         if (body) {
             const parsedBody = typeof body === 'object' ? body : JSON.parse(body)
             obj.body = parsedBody
         }
-
+        if (body2) {
+            const parsedBody2 = typeof body2 === 'object' ? body : JSON.parse(body2)
+            obj.body2 = parsedBody2
+        }
         return new SitecoreSearchTool(obj)
     }
 }
