@@ -86,7 +86,7 @@ Flowise has 3 different modules in a single mono repository.
 1.  Clone the repository
 
     ```bash
-    git clone https://github.com/FlowiseAI/Flowise.git
+    git clone https://github.com/x3mxray/Flowise.git
     ```
 
 2.  Go into repository folder
