@@ -15,7 +15,7 @@ export const notEmptyRegex = '(.|\\s)*\\S(.|\\s)*' //return true if string is no
 export const FLOWISE_CHATID = 'flowise_chatId'
 
 /*
- * List of dependencies allowed to be import in vm2
+ * List of dependencies allowed to be import in @flowiseai/nodevm
  */
 export const availableDependencies = [
     '@aws-sdk/client-bedrock-runtime',
@@ -701,14 +701,23 @@ export const convertSchemaToZod = (schema: string | object): ICommonObject => {
         const zodObj: ICommonObject = {}
         for (const sch of parsedSchema) {
             if (sch.type === 'string') {
-                if (sch.required) z.string({ required_error: `${sch.property} required` }).describe(sch.description)
-                zodObj[sch.property] = z.string().describe(sch.description)
+                if (sch.required) {
+                    zodObj[sch.property] = z.string({ required_error: `${sch.property} required` }).describe(sch.description)
+                } else {
+                    zodObj[sch.property] = z.string().describe(sch.description).optional()
+                }
             } else if (sch.type === 'number') {
-                if (sch.required) z.number({ required_error: `${sch.property} required` }).describe(sch.description)
-                zodObj[sch.property] = z.number().describe(sch.description)
+                if (sch.required) {
+                    zodObj[sch.property] = z.number({ required_error: `${sch.property} required` }).describe(sch.description)
+                } else {
+                    zodObj[sch.property] = z.number().describe(sch.description).optional()
+                }
             } else if (sch.type === 'boolean') {
-                if (sch.required) z.boolean({ required_error: `${sch.property} required` }).describe(sch.description)
-                zodObj[sch.property] = z.boolean().describe(sch.description)
+                if (sch.required) {
+                    zodObj[sch.property] = z.boolean({ required_error: `${sch.property} required` }).describe(sch.description)
+                } else {
+                    zodObj[sch.property] = z.boolean().describe(sch.description).optional()
+                }
             }
         }
         return zodObj
@@ -925,4 +934,9 @@ export const mapMimeTypeToExt = (mimeType: string) => {
         default:
             return ''
     }
+}
+
+// remove invalid markdown image pattern: ![<some-string>](<some-string>)
+export const removeInvalidImageMarkdown = (output: string): string => {
+    return typeof output === 'string' ? output.replace(/!\[.*?\]\((?!https?:\/\/).*?\)/g, '') : output
 }

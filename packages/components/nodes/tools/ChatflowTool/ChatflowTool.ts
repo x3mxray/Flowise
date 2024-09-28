@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm'
 import { z } from 'zod'
-import { NodeVM } from 'vm2'
+import { NodeVM } from '@flowiseai/nodevm'
 import { RunnableConfig } from '@langchain/core/runnables'
 import { CallbackManagerForToolRun, Callbacks, CallbackManager, parseCallbackConfigArg } from '@langchain/core/callbacks/manager'
 import { StructuredTool } from '@langchain/core/tools'
@@ -23,7 +23,7 @@ class ChatflowTool_Tools implements INode {
     constructor() {
         this.label = 'Chatflow Tool'
         this.name = 'ChatflowTool'
-        this.version = 4.0
+        this.version = 5.0
         this.type = 'ChatflowTool'
         this.icon = 'chatflowTool.svg'
         this.category = 'Tools'
@@ -56,6 +56,12 @@ class ChatflowTool_Tools implements INode {
                 rows: 3,
                 placeholder:
                     'State of the Union QA - useful for when you need to ask questions about the most recent state of the union address.'
+            },
+            {
+                label: 'Return Direct',
+                name: 'returnDirect',
+                type: 'boolean',
+                optional: true
             },
             {
                 label: 'Override Config',
@@ -134,6 +140,7 @@ class ChatflowTool_Tools implements INode {
         const _name = nodeData.inputs?.name as string
         const description = nodeData.inputs?.description as string
         const useQuestionFromChat = nodeData.inputs?.useQuestionFromChat as boolean
+        const returnDirect = nodeData.inputs?.returnDirect as boolean
         const customInput = nodeData.inputs?.customInput as string
         const overrideConfig =
             typeof nodeData.inputs?.overrideConfig === 'string' &&
@@ -167,6 +174,7 @@ class ChatflowTool_Tools implements INode {
             name,
             baseURL,
             description,
+            returnDirect,
             chatflowid: selectedChatflowId,
             startNewSession,
             headers,
@@ -205,6 +213,7 @@ class ChatflowTool extends StructuredTool {
     constructor({
         name,
         description,
+        returnDirect,
         input,
         chatflowid,
         startNewSession,
@@ -214,6 +223,7 @@ class ChatflowTool extends StructuredTool {
     }: {
         name: string
         description: string
+        returnDirect: boolean
         input: string
         chatflowid: string
         startNewSession: boolean
@@ -230,6 +240,7 @@ class ChatflowTool extends StructuredTool {
         this.headers = headers
         this.chatflowid = chatflowid
         this.overrideConfig = overrideConfig
+        this.returnDirect = returnDirect
     }
 
     async call(
@@ -272,6 +283,9 @@ class ChatflowTool extends StructuredTool {
         } catch (e) {
             await runManager?.handleToolError(e)
             throw e
+        }
+        if (result && typeof result !== 'string') {
+            result = JSON.stringify(result)
         }
         await runManager?.handleToolEnd(result)
         return result
