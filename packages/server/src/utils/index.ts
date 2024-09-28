@@ -1237,7 +1237,7 @@ export const isFlowValidForStream = (reactFlowNodes: IReactFlowNode[], endingNod
         // Anthropic streaming has some bug where the log is being sent, temporarily disabled
         const model = endingNodeData.inputs?.model
         if (endingNodeData.name.includes('toolAgent')) {
-            if (typeof model === 'string' && model.includes('chatAnthropic')) {
+            if (typeof model === 'string' && (model.includes('chatAnthropic') || model.includes('groqChat'))) {
                 return false
             } else if (typeof model === 'object' && 'id' in model && model['id'].includes('chatAnthropic')) {
                 return false
