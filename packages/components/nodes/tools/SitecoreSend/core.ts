@@ -1,70 +1,68 @@
+import { z } from 'zod'
 import { Tool } from '@langchain/core/tools'
 import fetch from 'node-fetch'
 
-export const desc = `Use this when you want to POST to a website.
-Input should be a json string with two keys: "url" and "data".
-The value of "url" should be a string, and the value of "data" should be a dictionary of 
-key-value pairs you want to POST to the url as a JSON body.
-Be careful to always use double quotes for strings in the json string
-The output will be the text response of the POST request.`
+export const desc = `Use this when you want to add user to Sitecore Send Mailing List.
+Input should be a json string with keys: "Name", "Email" and "Tags"
+The value of "Name" is customer name. (use 'Customer' by default)
+The value of "Email" is customer email.
+The value of "Tags" is array of tags. (use empy list by default)
+Required keys in the JSON object is "Email".`
 
-export interface Headers {
-    [key: string]: string
-}
-
-export interface Body {
-    [key: string]: any
+export interface InputParameters {
+    Name?: string
+    Email: string
+    Tags: string[]
 }
 
 export interface RequestParameters {
-    headers?: Headers
-    body?: Body
-    url?: string
-    description?: string
-    maxOutputLength?: number
+    listId?: string
+    apiKey: string
 }
 
 export class SitecoreSendTool extends Tool {
     name = 'sitecore_send'
-    url = ''
+    url = 'https://api.sitecoresend.io/v3'
     description = desc
-    maxOutputLength = Infinity
-    headers = {}
-    body = {}
+    requestParameters: RequestParameters
+
+    schema = z.object({
+        Email: z.string().email(),
+        Name: z.string(),
+        Tags: z.string().array()
+    }) as any
 
     constructor(args?: RequestParameters) {
         super()
-        this.url = args?.url ?? this.url
-        this.headers = args?.headers ?? this.headers
-        this.body = args?.body ?? this.body
-        this.description = args?.description ?? this.description
-        this.maxOutputLength = args?.maxOutputLength ?? this.maxOutputLength
+        this.requestParameters = args ?? ({} as RequestParameters)
     }
 
     /** @ignore */
-    async _call(input: string) {
+    async _call(input: z.infer<typeof this.schema>) {
         try {
-            let inputUrl = ''
-            let inputBody = {}
-            if (Object.keys(this.body).length || this.url) {
-                if (this.url) inputUrl = this.url
-                if (Object.keys(this.body).length) inputBody = this.body
-            } else {
-                const { url, data } = JSON.parse(input)
-                inputUrl = url
-                inputBody = data
+            if (input === undefined || input === null || typeof input !== 'object' || input.Email === undefined) {
+                throw new Error('Input is invalid: ' + input)
             }
 
-            if (process.env.DEBUG === 'true') console.info(`Making POST API call to ${inputUrl} with body ${JSON.stringify(inputBody)}`)
+            let url = this.url + `/subscribers/${this.requestParameters.listId}/subscribe.json?apikey=${this.requestParameters.apiKey}`
+            let body = {
+                Name: input.Name ?? 'Customer',
+                Email: input.Email,
+                HasExternalDoubleOptIn: true,
+                Tags: input.Tags ?? []
+            }
+            if (process.env.DEBUG === 'true') console.info(`Making POST API call to ${url} with body ${JSON.stringify(body)}`)
 
-            const res = await fetch(inputUrl, {
+            const res = await fetch(url, {
                 method: 'POST',
-                headers: this.headers,
-                body: JSON.stringify(inputBody)
+                body: JSON.stringify(body),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             })
 
-            const text = await res.text()
-            return text.slice(0, this.maxOutputLength)
+            const response = await res.json()
+            return response.Code == 0 ? 'Success' : response.Error
         } catch (error) {
             return `${error}`
         }
