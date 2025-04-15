@@ -3,7 +3,7 @@ import axios from 'axios'
 import * as fs from 'fs'
 import * as path from 'path'
 
-const MASTER_MODEL_LIST = 'https://raw.githubusercontent.com/FlowiseAI/Flowise/main/packages/components/models.json'
+const MASTER_MODEL_LIST = 'https://gist.githubusercontent.com/x3mxray/120269e5d7a272d5b09b29f34a4a5627/raw/c153e86f01256762185e15775359845d38b54a5f/models.json' //'https://raw.githubusercontent.com/FlowiseAI/Flowise/main/packages/components/models.json'
 
 export enum MODEL_TYPE {
     CHAT = 'chat',
